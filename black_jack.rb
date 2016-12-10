@@ -1,3 +1,7 @@
+require_relative 'dealer'
+require_relative 'gambler'
+require_relative 'player'
+
 class BlackJack
   attr_accessor :play_game, :money_player, :money_dealer
   attr_accessor :money_bank, :money_bet, :player_sum, :dealer_sum
@@ -16,56 +20,36 @@ class BlackJack
     enter_name
     loop do
       puts 'Будем играть? 1 - да, 0 - нет'
-      choice = gets.chomp.to_i
-      case choice
+      game_choice = gets.chomp.to_i
+      case game_choice
       when 1
-        if @money_dealer > 0 && @money_player > 0
-          do_bet
-          player_and_dealer_two_cards
-          info
-          selecting_actions_1
-          case
-          when @action == 1
-            action_dealer
-            selecting_actions_2
-            case
-            when @action == 1
-              player_get_card
-              end_game
-            when @action == 2
-              info
-              end_game
-            else
-              puts 'Введите корректное число'
-            end
-          when @action == 2
-            player_get_card
-            info
-            action_dealer
-            end_game
-          when @action == 3
-            end_game
-          else
-            puts 'Введите корректное число'
-          end
-          info_bet
-        else
-          puts 'У вас кончились деньги!' if @money_player <= 0
-          puts 'У дилера кончились деньги!' if @money_dealer <= 0
+        break if enough_money? == false
+        after_start
+        menu
+        case @menu_choice
+        when 1
+          player_skip_turn
+        when 2
+          player_choose_take_card
+        when 3
+          end_game
         end
       when 0
         break
       else
         puts 'Введите 1 или 0'
       end
+      info_bet
     end
     goodbye
   end
 
+  private
+
   def enter_name
     @name ||= ''
 
-    while @name == '' do
+    while @name.empty?
       puts "Как вас зовут?"
       @name = gets.chomp.capitalize
       puts "Здравствуйте #{@name}!"
@@ -79,42 +63,42 @@ class BlackJack
     @money_bank += @money_bet * 2
   end
 
-  def selecting_actions_1
-    puts 'Что вы хотите сделать?'
-    puts '1) Пропустить ход'
-    puts '2) Взять карту'
-    puts '3) Открыть карты'
-    @action = gets.chomp.to_i
+  def after_start
+    do_bet
+    player_and_dealer_two_cards
+    info
   end
 
-  def selecting_actions_2
-    puts 'Что вы хотите сделать?'
-    puts '1) Добавить карту'
-    puts '2) Открыть карты'
-    @action = gets.chomp.to_i
-   end
+  def player_choose_take_card
+    @player.player_get_card
+    info
+    @dealer.action_dealer
+    end_game
+  end
+
+  def player_skip_turn
+    @dealer.action_dealer
+    menu
+    if @menu_choice == 2
+      @player.player_get_card
+      end_game
+    elsif @menu_choice == 3
+      end_game
+    end 
+  end
+
+  def menu
+    puts '1) Пропустить ход' if @menu_choice != 1
+    puts '2) Взять карту' if @player.cards.size < 3
+    puts '3) Открыть карты'
+    @menu_choice = gets.chomp.to_i
+  end
 
   def player_and_dealer_two_cards
     puts 'Дилер раздает карты...'
     2.times { @player.take_card(@cards) }
     2.times { @dealer.take_card(@cards) }
-  end
-
-  def action_dealer
-    puts 'Ход дилера...'
-    if @dealer.sum >= 18
-      puts 'Дилер пропускает ход...'
-    else
-      @dealer.take_card(@cards)
-      puts 'Дилер берет себе карту...'
-    end
-  end
-
-  def player_get_card
-    fail puts 'Колода пустая' if @cards.nil?
-    @player.take_card(@cards)
-    puts 'Дилер добавил вам карту...'
-  end
+  end 
 
   def info
     puts "Ваши карты: #{@player.card_face}"
@@ -128,34 +112,39 @@ class BlackJack
     puts "У Игрока сейчас #{@money_player} $"
   end
 
+  def enough_money?
+    if @money_dealer > 0 && @money_player > 0
+      true
+    else
+      puts 'У вас кончились деньги!' if @money_player <= 0
+      puts 'У дилера кончились деньги!' if @money_dealer <= 0
+      false
+    end
+  end
+
   def end_game
     puts 'Вы и дилер вскрываете карты...'
     puts "У вас #{@player.sum} очков"
     puts "У дилера #{@dealer.sum} очков"
-    Gambler.winner(@player, @dealer)
-    winner = Gambler.winner(@player, @dealer)
-    if winner == @player
+    @winner = Gambler.winner(@player, @dealer)
+    if @winner == @player
       puts 'Поздравляем, вы победили!'
       puts 'Дилер выплачивает ваш выигрыш'
-      money_bank_win_player
-    elsif winner == :no_one
+      money_bank_winner
+    elsif @winner == :no_one
       puts 'Никто не победил'
       puts 'Деньги остаются в банке'
     else
       puts 'Увы, вы проиграли'
       puts 'Дилер забирает деньги из банка себе'
-      money_bank_win_dealer
+      money_bank_winner
     end
     @player.cards.clear && @dealer.cards.clear
   end
 
-  def money_bank_win_player
-    @money_player += @money_bank
-    @money_bank = 0
-  end
-
-  def money_bank_win_dealer
-    @money_dealer += @money_bank
+  def money_bank_winner
+    @money_player += @money_bank if @winner == @player
+    @money_dealer += @money_bank if @winner == @dealer
     @money_bank = 0
   end
 

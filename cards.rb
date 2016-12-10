@@ -15,7 +15,7 @@ class Cards
       end
     end
 
-    deck.sort_by! { rand }
+    deck.shuffle!
     deck
   end
 

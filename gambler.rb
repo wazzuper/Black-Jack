@@ -17,7 +17,7 @@ class Gambler
 
   # Берем карту
   def take_card(cards)
-    cards.sort_by! { rand }
+    cards.shuffle!
     @cards << cards[0]
   end
 
@@ -31,13 +31,6 @@ class Gambler
     ace_value!(@ace_count)
     @sum
   end
-
-  # Открываем карты игроку
-  def card_face
-    @card_face = []
-    @cards.each { |t| @card_face << t.face }
-    @card_face
-  end  
 
   private
 
