@@ -23,10 +23,10 @@ class BlackJack
       game_choice = gets.chomp.to_i
       case game_choice
       when 1
-        break if enough_money? == false
+        break unless enough_money?
         after_start
-        menu
-        case @menu_choice
+        choice = menu
+        case choice
         when 1
           player_skip_turn
         when 2
@@ -78,20 +78,14 @@ class BlackJack
 
   def player_skip_turn
     @dealer.action_dealer
-    menu
-    if @menu_choice == 2
-      @player.player_get_card
-      end_game
-    elsif @menu_choice == 3
-      end_game
-    end 
+    end_game
   end
 
   def menu
-    puts '1) Пропустить ход' if @menu_choice != 1
+    puts '1) Пропустить ход'
     puts '2) Взять карту' if @player.cards.size < 3
     puts '3) Открыть карты'
-    @menu_choice = gets.chomp.to_i
+    gets.chomp.to_i
   end
 
   def player_and_dealer_two_cards
@@ -113,13 +107,10 @@ class BlackJack
   end
 
   def enough_money?
-    if @money_dealer > 0 && @money_player > 0
-      true
-    else
-      puts 'У вас кончились деньги!' if @money_player <= 0
-      puts 'У дилера кончились деньги!' if @money_dealer <= 0
-      false
-    end
+  return true if @money_dealer > 0 && @money_player > 0
+  puts 'У вас кончились деньги!' if @money_player <= 0
+  puts 'У дилера кончились деньги!' if @money_dealer <= 0
+  false
   end
 
   def end_game
